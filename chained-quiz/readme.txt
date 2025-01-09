@@ -3,8 +3,8 @@ Contributors: prasunsen, wakeop
 Tags: quiz, exam, test, questionnaire, survey
 Requires at least: 4.0
 Requires PHP: 8.0
-Tested up to: 6.6
-Stable tag: 1.3.2.9
+Tested up to: 6.7
+Stable tag: 1.3.3
 License: GPL2
 
 Create a quiz where the next question depends on the answer to the previous question. Final quiz results depend on the amount of collected points.

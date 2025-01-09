@@ -143,30 +143,49 @@ class ChainedIntegrations {
 		
 	 // save MailChimp API key and password
 	  if(!empty($_POST['set_key']) and check_admin_referer('chained_mail_settings')) {
-		  $double_optin = empty($_POST['no_optin']) ? 0 : 1;   	  	
+		  $double_optin = empty($_POST['no_optin']) ? 0 : 1;
+
+		  $api_key = wp_kses_post($_POST['api_key']);
+
+		// Validate the API key format using a regular expression
+		if (preg_match('/^[a-zA-Z0-9+_-]+-[a-zA-Z0-9+_-]+$/', $api_key)) {
+			update_option('chainedchimp_api_key', $api_key);
+			update_option('chainedchimp_no_optin', $double_optin);
+		} else {
+			// Handle invalid API key error
+			wp_die('Invalid MailChimp API key format.');
+		}
 	  	
-	  	  update_option('chainedchimp_api_key', wp_kses_post( $_POST['api_key'] ) );
+	  	  update_option('chainedchimp_api_key', $api_key );
 	  	  update_option('chainedchimp_no_optin', $double_optin);
 	  }
+
 	  $api_key = get_option('chainedchimp_api_key');
+
 	  if(!empty($api_key) and strstr($api_key, '-')) {
 	  		list($nothing, $dc) = explode('-', $api_key);
-	  	   $url = 'https://'.$dc.'.api.mailchimp.com/3.0/';
+
+			if (preg_match('/^[a-zA-Z0-9+_-]+-[a-zA-Z0-9+_-]+$/', $dc)) {
+				$url = 'https://'.$dc.'.api.mailchimp.com/3.0/';
 	  	   
-	  	    // select mailing lists from mailchimp
-   	 	$json_result = wp_remote_get($url.'lists?count=1000', array(
-				'timeout' => 45,			
-				
-			    'headers'     => array('Authorization' => 'Basic ' . base64_encode( 'user:'. $api_key )),			   
-			    ));		
-		    	
-			if( is_wp_error( $json_result  ) ) {
-			    echo $json_result->get_error_message();
-			    $result = '';
+				// select mailing lists from mailchimp
+				$json_result = wp_remote_get($url.'lists?count=1000', array(
+					'timeout' => 45,
+
+					'headers'     => array('Authorization' => 'Basic ' . base64_encode( 'user:'. $api_key )),
+					));
+
+				if( is_wp_error( $json_result  ) ) {
+					echo $json_result->get_error_message();
+					$result = '';
+				}
+				else $result = json_decode($json_result['body']);
+				//print_r($json_result);
+				$lists = @$result->lists;
 			}
-			else $result = json_decode($json_result['body']);
-			//print_r($json_result);
-			$lists = @$result->lists;
+			else {
+				$lists = [];
+			}
 	  }
 	  else $lists = [];
 		
