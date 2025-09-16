@@ -166,7 +166,7 @@ class ChainedQuizQuiz {
 		 $this->send_emails($quiz, $email_output);
 		 
 		 $GLOBALS['chained_completion_id'] = $completion_id;
-		 $GLOBALS['chained_result_id'] = @$result->id;
+		 $GLOBALS['chained_result_id'] = $result->id ?? 0;
 		 $output = do_shortcode($output);
 		 $output = wpautop($output);
 		 
@@ -175,15 +175,22 @@ class ChainedQuizQuiz {
 		 if(!empty($quiz->save_source_url)) $source_url = esc_url_raw($_SERVER['HTTP_REFERER']);	
 		 
 		 // now insert in completed
-		 if(!empty($_COOKIE['chained_completion_id'.$quiz->id])) {		 	 
-		 	$wpdb->query( $wpdb->prepare("UPDATE ".CHAINED_COMPLETED." SET
-		 		quiz_id = %d, points = %f, result_id = %d, datetime = NOW(), ip = %s, user_id = %d, 
-		 		snapshot = %s, source_url=%s, email=%s WHERE id=%d",
-		 		$quiz->id, $points, @$result->id, chained_user_ip(), $user_id, $output, 
-		 		$source_url, $user_email, $completion_id));
+		 if(!empty($_COOKIE['chained_completion_id'.$quiz->id])) {
+			 // if for whatever reason it's already completed don't override it
+			 $is_completed = $wpdb->get_var($wpdb->prepare("SELECT id FROM ".CHAINED_COMPLETED."
+				WHERE id=%d snapshot IS NOT NULL", $completion_id));
+
+			 if(!$is_completed) {
+				 $wpdb->query( $wpdb->prepare("UPDATE ".CHAINED_COMPLETED." SET
+					quiz_id = %d, points = %f, result_id = %d, datetime = NOW(), ip = %s, user_id = %d,
+					snapshot = %s, source_url=%s, email=%s WHERE id=%d",
+					$quiz->id, $points, @$result->id, chained_user_ip(), $user_id, $output,
+					$source_url, $user_email, $completion_id));
+				 setcookie('chained_completion_id'.$quiz->id, '', time() - 30*24*3600, '/');
+			 }
 
 		 	$taking_id = $_COOKIE['chained_completion_id'.$quiz->id];
-		 	setcookie('chained_completion_id'.$quiz->id, '', time() - 30*24*3600, '/');
+
 		 }	 
 		 else {
 		 	

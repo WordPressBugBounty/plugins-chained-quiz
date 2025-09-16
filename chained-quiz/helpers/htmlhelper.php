@@ -130,7 +130,7 @@ function chained_validate_completion_ownership($completion_id, $quiz_id) {
 	}
 	
 	// If user is logged in, check if the completion belongs to them
-	if (is_user_logged_in()) {
+	if (is_user_logged_in() or $completion->user_id ) {
 		return ($completion->user_id == $user_ID);
 	} else {
 		// For non-logged in users, check IP address
