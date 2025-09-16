@@ -112,3 +112,32 @@ function chained_user_ip() {
 	// no GDPR features
 	return $_SERVER['REMOTE_ADDR'];
 }
+
+// Validate if a completion ID belongs to the current user/session
+function chained_validate_completion_ownership($completion_id, $quiz_id) {
+	global $wpdb, $user_ID;
+	
+	// Get the completion record
+	$completion = $wpdb->get_row($wpdb->prepare(
+		"SELECT * FROM " . CHAINED_COMPLETED . " WHERE id = %d AND quiz_id = %d", 
+		$completion_id, 
+		$quiz_id
+	));
+	
+	// If completion record doesn't exist, return false
+	if (!$completion) {
+		return false;
+	}
+	
+	// If user is logged in, check if the completion belongs to them
+	if (is_user_logged_in()) {
+		return ($completion->user_id == $user_ID);
+	} else {
+		// For non-logged in users, check IP address
+		// Note: This is not 100% secure as IPs can be shared, but it's better than nothing
+		$ip = chained_user_ip();
+		return ($completion->ip == $ip);
+	}
+	
+	return false;
+}

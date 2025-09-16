@@ -99,6 +99,11 @@ class ChainedQuizQuiz {
 	    $user_id = empty($user_ID) ? 0 : $user_ID;
 	    $completion_id = empty($_COOKIE['chained_completion_id'.$quiz->id]) ? 0 : intval($_COOKIE['chained_completion_id'.$quiz->id]);
 	     
+	     // Validate completion ownership to prevent IDOR
+	     if ($completion_id && !chained_validate_completion_ownership($completion_id, $quiz->id)) {
+	     	die(__('Unauthorized access to quiz completion.', 'chained'));
+	     }
+	     
 		 $_result = new ChainedQuizResult();
 		 // calculate result
 		 $result = $_result->calculate($quiz, $points);
@@ -170,12 +175,12 @@ class ChainedQuizQuiz {
 		 if(!empty($quiz->save_source_url)) $source_url = esc_url_raw($_SERVER['HTTP_REFERER']);	
 		 
 		 // now insert in completed
-		 if(!empty($_COOKIE['chained_completion_id'.$quiz->id])) {		 	
+		 if(!empty($_COOKIE['chained_completion_id'.$quiz->id])) {		 	 
 		 	$wpdb->query( $wpdb->prepare("UPDATE ".CHAINED_COMPLETED." SET
 		 		quiz_id = %d, points = %f, result_id = %d, datetime = NOW(), ip = %s, user_id = %d, 
 		 		snapshot = %s, source_url=%s, email=%s WHERE id=%d",
 		 		$quiz->id, $points, @$result->id, chained_user_ip(), $user_id, $output, 
-		 		$source_url, $user_email, intval($_COOKIE['chained_completion_id'.$quiz->id])));
+		 		$source_url, $user_email, $completion_id));
 
 		 	$taking_id = $_COOKIE['chained_completion_id'.$quiz->id];
 		 	setcookie('chained_completion_id'.$quiz->id, '', time() - 30*24*3600, '/');

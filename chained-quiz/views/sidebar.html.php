@@ -1,7 +1,7 @@
 <div id="chained-related" class="chained-sidebox">
 	<h3>Did you know?</h3>
 	
-	<p>Now you can use <a href="http://blog.calendarscripts.info/chained-quiz-logic-free-add-on-for-watupro/" target="_blank">this tool</a> to transfer your quizzes to the best premium quiz plugin <a href="http://calendarscripts.info/watupro/" target="_blank">WatuPRO</a>. This will give you access to premuim support and a lot of great fatures like user registration, randomizing, categorization, super-high flexibility, lots of question types, and more.</p>
+	<p>Now you can use <a href="http://blog.calendarscripts.info/chained-quiz-logic-free-add-on-for-watupro/" target="_blank">this tool</a> to transfer your quizzes to the best premium quiz plugin <a href="http://calendarscripts.info/watupro/" target="_blank">WatuPRO</a>. This will give you access to premuim support and a lot of great features like user registration, randomizing, categorization, super-high flexibility, lots of question types, and more.</p>
 	
 	<p><?php _e('<b>WatuPRO</b> is general purpose quiz, survey and exam plugin with rich reporting features and free integration with many popular plugins and services.', 'chained');?> </p>
 	

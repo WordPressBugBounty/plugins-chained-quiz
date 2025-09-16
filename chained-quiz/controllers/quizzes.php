@@ -183,7 +183,14 @@ You achieved {{points}} points from {{questions}} questions.', 'chained');
 		$next_question = $_question->next($question, $answer);
 		
 		// store the answer
-		if(!empty($_COOKIE['chained_completion_id'.$quiz->id])) {			
+		if(!empty($_COOKIE['chained_completion_id'.$quiz->id])) {
+			$completion_id = intval($_COOKIE['chained_completion_id'.$quiz->id]);
+			
+			// Validate completion ownership to prevent IDOR
+			if (!chained_validate_completion_ownership($completion_id, $quiz->id)) {
+				die(__('Unauthorized access to quiz completion.', 'chained'));
+			}
+			
 			if(is_array($answer)) {
 				$answer = chained_int_array($answer);
 				$answer = implode(",", $answer);
@@ -194,7 +201,7 @@ You achieved {{points}} points from {{questions}} questions.', 'chained');
 			// make sure to avoid duplicates and only update the answer if it already exists
 			$exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM ".CHAINED_USER_ANSWERS."
 				WHERE quiz_id=%d AND completion_id=%d AND question_id=%d", 
-				$quiz->id, intval($_COOKIE['chained_completion_id'.$quiz->id]), $question->id));		
+				$quiz->id, $completion_id, $question->id));		
 			
 			$choice_choice = $choice_correct = '';
 			
@@ -214,16 +221,16 @@ You achieved {{points}} points from {{questions}} questions.', 'chained');
 				$wpdb->query($wpdb->prepare("UPDATE ".CHAINED_USER_ANSWERS." SET
 					answer=%s, points=%f, comments=%s, is_correct=%d 
 					WHERE quiz_id=%d AND completion_id=%d AND question_id=%d", 
-					$answer, $points, $comments, $correct_var, $quiz->id, intval($_COOKIE['chained_completion_id'.$quiz->id]), $question->id));
+					$answer, $points, $comments, $correct_var, $quiz->id, $completion_id, $question->id));
 			}
 			else {				
 				$wpdb->query($wpdb->prepare("INSERT INTO ".CHAINED_USER_ANSWERS." SET
 					quiz_id=%d, completion_id=%d, question_id=%d, answer=%s, points=%f, comments=%s, is_correct=%d",
-					$quiz->id, intval($_COOKIE['chained_completion_id'.$quiz->id]), $question->id, $answer, $points, $comments, $correct_var));
+					$quiz->id, $completion_id, $question->id, $answer, $points, $comments, $correct_var));
 			}		
 			
 			// update the "completed" record as non empty
-			$wpdb->query($wpdb->prepare("UPDATE ".CHAINED_COMPLETED." SET not_empty=1 WHERE id=%d", intval($_COOKIE['chained_completion_id'.$quiz->id])));
+			$wpdb->query($wpdb->prepare("UPDATE ".CHAINED_COMPLETED." SET not_empty=1 WHERE id=%d", $completion_id));
 		}
 		
 		if(!empty($next_question->id)) {

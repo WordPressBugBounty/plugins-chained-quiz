@@ -33,6 +33,14 @@ class ChainedSharing {
 		global $wpdb;
 		$taking_id = intval($GLOBALS['chained_completion_id']);
 		
+		// Get the quiz_id from the completion record
+		$completion = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . CHAINED_COMPLETED . " WHERE id = %d", $taking_id));
+		
+		// Validate completion ownership to prevent IDOR
+		if ($taking_id && $completion && !chained_validate_completion_ownership($taking_id, $completion->quiz_id)) {
+			die(__('Unauthorized access to quiz completion.', 'chained'));
+		}
+		
 		ob_start();
 		// https://developers.facebook.com/docs/sharing/reference/feed-dialog
 		$appid = get_option('chained_facebook_appid');
@@ -141,6 +149,13 @@ class ChainedSharing {
 		
 		if(empty($_GET['tid']) or empty($_GET['chained_sssnippet'])) return false;
 		$taking_id = intval($_GET['tid']);
+		
+		// Validate completion ownership to prevent IDOR
+		$completion = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . CHAINED_COMPLETED . " WHERE id = %d", $taking_id));
+		if ($taking_id && $completion && !chained_validate_completion_ownership($taking_id, $completion->quiz_id)) {
+			wp_die(__('Unauthorized access to quiz completion.', 'chained'));
+			return;
+		}
 			
 		// select taking
 		$taking = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".CHAINED_COMPLETED." WHERE id=%d", $taking_id));
