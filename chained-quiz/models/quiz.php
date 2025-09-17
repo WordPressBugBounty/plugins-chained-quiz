@@ -178,7 +178,7 @@ class ChainedQuizQuiz {
 		 if(!empty($_COOKIE['chained_completion_id'.$quiz->id])) {
 			 // if for whatever reason it's already completed don't override it
 			 $is_completed = $wpdb->get_var($wpdb->prepare("SELECT id FROM ".CHAINED_COMPLETED."
-				WHERE id=%d snapshot IS NOT NULL", $completion_id));
+				WHERE id=%d AND snapshot IS NOT NULL", $completion_id));
 
 			 if(!$is_completed) {
 				 $wpdb->query( $wpdb->prepare("UPDATE ".CHAINED_COMPLETED." SET
