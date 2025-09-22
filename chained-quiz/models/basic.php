@@ -158,6 +158,10 @@ class ChainedQuiz {
 		if($version < 0.67) {
 			$wpdb->query("UPDATE ".CHAINED_COMPLETED." SET not_empty=1");
 		}
+
+		if($version < 0.88) {
+			$wpdb->query("ALTER TABLE ".CHAINED_COMPLETED." CHANGE ip ip VARCHAR(191) NOT NULL DEFAULT ''");
+		}
 	  
 		// setup the default options (when not yet saved ever)
 		if(get_option('chained_sender_name') == '') {
@@ -167,7 +171,7 @@ class ChainedQuiz {
 			update_option('chained_user_subject', __('Your results on {{quiz-name}}', 'chained'));		
 		}	  
 	  
-	  update_option('chainedquiz_version', "0.87");
+	  update_option('chainedquiz_version', "0.88");
 	  // exit;
    }
    
@@ -272,7 +276,7 @@ class ChainedQuiz {
 		}
 				
 		$version = get_option('chainedquiz_version');
-		if(version_compare($version, '0.87') == -1) self::install(true);
+		if(version_compare($version, '0.88') == -1) self::install(true);
 	}
 			
 	// manage general options
