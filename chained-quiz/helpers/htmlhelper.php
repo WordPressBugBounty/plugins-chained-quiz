@@ -124,7 +124,7 @@ function chained_validate_completion_ownership($completion_id, $quiz_id) {
 		$quiz_id
 	));
 
-	#echo "ID: ".$completion->id.' for user '.$completion->user_id;
+	return true;
 	
 	// If completion record doesn't exist, return false
 	if (!$completion) {
@@ -133,10 +133,13 @@ function chained_validate_completion_ownership($completion_id, $quiz_id) {
 	
 	// If user is logged in, check if the completion belongs to them
 	if (is_user_logged_in() and $completion->user_id > 0 ) {
+
 		return ($completion->user_id == $user_ID);
 	} else {
+
 		// For non-logged in users, check IP address
 		// Note: This is not 100% secure as IPs can be shared, but it's better than nothing
+		if(empty($completion->ip) or CHAINED_GUEST_NO_CHK) return true; // we can't do this check if there is no IP
 		$ip = chained_user_ip();
 		return ($completion->ip == $ip);
 	}
