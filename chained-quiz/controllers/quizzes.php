@@ -159,11 +159,20 @@ You achieved {{points}} points from {{questions}} questions.', 'chained');
 		// select quiz
 		$quiz = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".CHAINED_QUIZZES." WHERE id=%d", intval($_POST['quiz_id'])));
 		
+		$completion_id = empty($_COOKIE['chained_completion_id'.$quiz->id]) ? 0 : intval($_COOKIE['chained_completion_id'.$quiz->id]);
+
 		 // text captcha?
         if(!empty($quiz->require_text_captcha)) {	
-            // verify captcha
-            if(!empty($_POST['chained_text_captcha_answer'])) {
-                if(!ChainedTextCaptcha :: verify($_POST['chained_text_captcha_question'], $_POST['chained_text_captcha_answer'])) die('CHAINED_CAPTCHA:::'.__('Wrong answer to the verification question.', 'chained'));	
+            // verify captcha only if this is the first question in the completion
+            $answers_count = 0;
+            if($completion_id) {
+                $answers_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM ".CHAINED_USER_ANSWERS." WHERE completion_id=%d", $completion_id));
+            }
+
+            if($answers_count == 0) {
+                if(empty($_POST['chained_text_captcha_answer']) || !ChainedTextCaptcha :: verify($_POST['chained_text_captcha_question'], $_POST['chained_text_captcha_answer'])) {
+                    die('CHAINED_CAPTCHA:::'.__('Wrong answer to the verification question.', 'chained'));	
+                }
             }
         }
 		
@@ -241,8 +250,11 @@ You achieved {{points}} points from {{questions}} questions.', 'chained');
 			include(CHAINED_PATH."/views/display-quiz.html.php");
 		}
 		else {
-			 // add to points
-			 $points += floatval($_POST['points']);
+			 // recalculate points from database to avoid manipulation
+			 if($completion_id) {
+				 $stored_points = $wpdb->get_var($wpdb->prepare("SELECT SUM(points) FROM ".CHAINED_USER_ANSWERS." WHERE completion_id=%d", $completion_id));
+				 $points = floatval($stored_points);
+			 }
 			 echo $_quiz->finalize($quiz, $points); // if none, submit the quiz
 		}	 		
 	}

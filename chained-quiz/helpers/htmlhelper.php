@@ -123,8 +123,6 @@ function chained_validate_completion_ownership($completion_id, $quiz_id) {
 		$completion_id, 
 		$quiz_id
 	));
-
-	return true;
 	
 	// If completion record doesn't exist, return false
 	if (!$completion) {
