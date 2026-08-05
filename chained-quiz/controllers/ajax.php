@@ -2,6 +2,10 @@
 if( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 // handle all ajax
 function chainedquiz_ajax() {
+	if (!check_ajax_referer('chainedquiz_nonce', 'chainedquiz_nonce', false)) {
+		wp_die(__('Security check failed.', 'chained'));
+	}
+
 	$action = empty($_POST['chainedquiz_action']) ? 'answer' : $_POST['chainedquiz_action'];
 	
 	// currently just "answer" but the code will handle future versions

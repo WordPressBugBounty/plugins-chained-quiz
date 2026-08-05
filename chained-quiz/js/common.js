@@ -49,6 +49,9 @@ chainedQuiz.goon = function(quizID, url) {
 	data = jQuery('#chained-quiz-form-'+quizID).serialize();
 	data += '&action=chainedquiz_ajax';
 	data += '&chainedquiz_action=answer';
+	if (data.indexOf('chainedquiz_nonce=') === -1 && typeof chained_i18n !== 'undefined' && chained_i18n.ajax_nonce) {
+		data += '&chainedquiz_nonce=' + chained_i18n.ajax_nonce;
+	}
 	this.questions_answered++;
 	data += '&total_questions=' + this.questions_answered;
     

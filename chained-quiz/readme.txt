@@ -1,10 +1,10 @@
 === Chained Quiz ===
 Contributors: prasunsen, wakeop
 Tags: quiz, exam, test, questionnaire, survey
-Requires at least: 4.0
+Requires at least: 5.0
 Requires PHP: 8.0
 Tested up to: 7.0
-Stable tag: 1.4.0.1
+Stable tag: 1.4.1
 License: GPL2
 
 Create a quiz where the next question depends on the answer to the previous question. Final quiz results depend on the amount of collected points.

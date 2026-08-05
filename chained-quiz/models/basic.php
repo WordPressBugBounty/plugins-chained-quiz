@@ -224,6 +224,7 @@ class ChainedQuiz {
 			'please_provide_email' => __('Please provide valid email address', 'chained'),
 			'complete_text_captcha' => __('You need to answer the verification question', 'chained'),
 			'dont_autoscroll' => (empty($ui['dont_autoscroll']) ? 0 : 1),
+			'ajax_nonce' => wp_create_nonce('chainedquiz_nonce'),
 		);
 		wp_localize_script( 'chained-common', 'chained_i18n', $translation_array );	
 	}

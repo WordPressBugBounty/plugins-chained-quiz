@@ -24,6 +24,7 @@ if(!empty($quiz->require_login) and !empty($quiz->times_to_take)) {
 ?>
 <?php if(!empty($first_load)):?><div class="chained-quiz" id="chained-quiz-div-<?php echo $quiz->id?>"><?php endif;?>
 <form method="post" id="chained-quiz-form-<?php echo $quiz->id?>">
+	<?php wp_nonce_field('chainedquiz_nonce', 'chainedquiz_nonce'); ?>
 	<div class="chained-quiz-area" id="chained-quiz-wrap-<?php echo $quiz->id?>">
 		<?php if(!empty($quiz->email_user) and !is_user_logged_in()):?>
 			<div class="chained-quiz-email" <?php if($quiz->hide_email_field and !empty($_POST['chained_email']) and preg_match('/^[^\s@]+@[^\s@]+\.[^\s@]+$/', $_POST['chained_email'])):?>style="display:none;"<?php endif;?>>
