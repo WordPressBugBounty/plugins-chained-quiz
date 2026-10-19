@@ -62,11 +62,12 @@ class ChainedSharing {
 			$linkedin_title = str_replace('{{{result-title}}}', stripslashes(@$result->title), $linkedin_title);				
 			$linkedin_title = str_replace('{{{quiz-name}}}', stripslashes($quiz_name), $linkedin_title);
 		}
+		$target_post_id = intval($_POST['post_id'] ?? 0);
 		if(!empty($linkedin_msg)) {
 			$linkedin_msg = str_replace('{{{result-title}}}', stripslashes(@$result->title), $linkedin_msg);			
 			$linkedin_msg = str_replace('{{{result-description}}}', stripslashes(@$result->description), $linkedin_msg);	
 			$linkedin_msg = str_replace('{{{quiz-name}}}', stripslashes($quiz_name), $linkedin_msg);
-			$linkedin_msg = str_replace('{{{url}}}', get_permalink($_POST['post_id']), $linkedin_msg);
+			$linkedin_msg = str_replace('{{{url}}}', get_permalink($target_post_id), $linkedin_msg);
 		}
 		
 		// if not, default to grade title and desc
@@ -123,18 +124,18 @@ class ChainedSharing {
 			
 			$tweet = substr($tweet, 0, 140);
 		}
-		$shareable_url = site_url('?chained_sssnippet=1&amp;tid='.$taking_id.'&amp;creturn_to='.$_POST['post_id']);
+		$shareable_url = site_url('?chained_sssnippet=1&amp;tid='.$taking_id.'&amp;creturn_to='.$target_post_id);
 		?>	
-		<div><?php if(!empty($appid)):?><a title="Share your results on Facebook" onclick="return !window.open(this.href, 'Facebook', 'width=640,height=300')" href="https://www.facebook.com/dialog/feed?app_id=<?php echo $appid?>&amp;display=popup&amp;link=<?php echo urlencode(get_permalink($_POST['post_id']))?>&amp;name=<?php echo urlencode($linkedin_title)?>&amp;redirect_uri=<?php echo urlencode(get_permalink($_POST['post_id']))?>&amp;description=<?php echo urlencode($linkedin_msg)?><?php echo $picture_str?>" target="_blank"><img src="<?php echo CHAINED_URL.'img/share/facebook.png'?>"></a>&nbsp;
+		<div><?php if(!empty($appid)):?><a title="Share your results on Facebook" onclick="return !window.open(this.href, 'Facebook', 'width=640,height=300')" href="https://www.facebook.com/dialog/feed?app_id=<?php echo esc_attr($appid)?>&amp;display=popup&amp;link=<?php echo urlencode(get_permalink($target_post_id))?>&amp;name=<?php echo urlencode($linkedin_title)?>&amp;redirect_uri=<?php echo urlencode(get_permalink($target_post_id))?>&amp;description=<?php echo urlencode($linkedin_msg)?><?php echo $picture_str?>" target="_blank"><img src="<?php echo esc_url(CHAINED_URL.'img/share/facebook.png')?>"></a>&nbsp;
 		<?php endif; // end if Facebook 
 		if(!empty($linkedin['enabled'])):?>
 	   	<script src="//platform.linkedin.com/in.js" type="text/javascript">
  			 lang: en_US
 			</script>
-		<script type="IN/Share" data-url="<?php echo $shareable_url;?>"></script>	 
+		<script type="IN/Share" data-url="<?php echo esc_url($shareable_url);?>"></script>	 
 	   <?php endif; // endif linkedin
 		 if(!empty($twitter_options['use_twitter'])):?>
-		 <a href="https://twitter.com/share" class="twitter-share-button watu-twitter-share-button" data-url="<?php echo get_permalink($_POST['post_id'])?>" data-via="<?php echo $twitter_options['via']?>" data-hashtags="<?php echo $twitter_options['hashtag']?>" data-text="<?php echo htmlentities($tweet)?>" <?php if(empty($twitter_options['show_count'])):?>data-count="none"<?php endif;?>>Tweet</a>
+		 <a href="https://twitter.com/share" class="twitter-share-button watu-twitter-share-button" data-url="<?php echo esc_url(get_permalink($target_post_id))?>" data-via="<?php echo esc_attr($twitter_options['via'] ?? '')?>" data-hashtags="<?php echo esc_attr($twitter_options['hashtag'] ?? '')?>" data-text="<?php echo esc_attr($tweet)?>" <?php if(empty($twitter_options['show_count'])):?>data-count="none"<?php endif;?>>Tweet</a>
 <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
 	   <?php endif;?></div>
 		<?php 
@@ -149,26 +150,31 @@ class ChainedSharing {
 		
 		if(empty($_GET['tid']) or empty($_GET['chained_sssnippet'])) return false;
 		$taking_id = intval($_GET['tid']);
+		if(!$taking_id) return false;
 		
 		// Validate completion ownership to prevent IDOR
 		$completion = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . CHAINED_COMPLETED . " WHERE id = %d", $taking_id));
-		if ($taking_id && $completion && !chained_validate_completion_ownership($taking_id, $completion->quiz_id)) {
+		if (!$completion || !chained_validate_completion_ownership($taking_id, $completion->quiz_id)) {
 			wp_die(__('Unauthorized access to quiz completion.', 'chained'));
 			return;
 		}
 			
 		// select taking
-		$taking = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".CHAINED_COMPLETED." WHERE id=%d", $taking_id));
+		$taking = $completion;
 		$result = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".CHAINED_RESULTS." WHERE id=%d", $taking->result_id));
 		
-		// select exam and make sure social sharing buttons are there. If not,  redirect to the post
+		// select exam and make sure social sharing buttons are there. If not, redirect to the post
 		$quiz = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".CHAINED_QUIZZES." WHERE id=%d", $taking->quiz_id));
 		
-		if(!strstr($quiz->output, '[chained-share')) chained_redirect(get_permalink($_GET['creturn_to']));
+		$creturn_to = intval($_GET['creturn_to'] ?? 0);
+		$return_url = $creturn_to ? get_permalink($creturn_to) : home_url();
+
+		if(empty($quiz) || !strstr($quiz->output, '[chained-share')) {
+			chained_redirect($return_url);
+		}
 		$quiz_name = $quiz->title;
 				
 		// select grade
-		$result = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".CHAINED_RESULTS." WHERE id=%d", $taking->result_id));
 		if(empty($result->title)) $result = (object)array("title"=>'None', 'description'=>'None');	
 		
 		// try to get the image
@@ -205,8 +211,8 @@ class ChainedSharing {
 		
 	 	// prepare open graph title & description - same for LinkedIn and Gplus 
 		$linkedin = get_option('chained_linkedin');
-		$og_msg = stripslashes($linkedin['msg']);
-		$og_title = stripslashes($linkedin['title']);
+		$og_msg = stripslashes($linkedin['msg'] ?? '');
+		$og_title = stripslashes($linkedin['title'] ?? '');
 				
 		// title and description set up?
 		if(!empty($og_title)) {
@@ -217,7 +223,7 @@ class ChainedSharing {
 			$og_msg = str_replace('{{{result-title}}}', stripslashes($result->title), $og_msg);			
 			$og_msg = str_replace('{{{result-description}}}', stripslashes($result->description), $og_msg);	
 			$og_msg = str_replace('{{{quiz-name}}}', stripslashes($quiz_name), $og_msg);
-			$og_msg = str_replace('{{{url}}}', $_GET['creturn_to'], $og_msg);
+			$og_msg = str_replace('{{{url}}}', esc_url($return_url), $og_msg);
 		}
 		
 		// if not, default to grade title and desc

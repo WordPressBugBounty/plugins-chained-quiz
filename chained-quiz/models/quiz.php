@@ -307,10 +307,10 @@ class ChainedQuizQuiz {
 			
 			$output .= '<tr><td>'.$_question->display_question($answer).'</td><td>';
 			$output .= $user_answer;
-			if(!empty($answer->comments)) $output .= wpautop(stripslashes($answer->comments));
+			if(!empty($answer->comments)) $output .= wpautop(esc_html(stripslashes($answer->comments)));
 			$output .= '</td><td>';
 			$output .= $is_correct;
-			$output .= '</td><td>'.$answer->points.'</td></tr>';
+			$output .= '</td><td>'.esc_html($answer->points).'</td></tr>';
 		}
 		
 		$output .= '</table>';

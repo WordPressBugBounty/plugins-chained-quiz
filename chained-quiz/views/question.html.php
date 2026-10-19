@@ -1,15 +1,15 @@
 <div class="wrap">
-	<h1><?php printf(__('Add/Edit Question in "%s"', 'chained'), $quiz->title)?></h1>
+	<h1><?php printf(__('Add/Edit Question in "%s"', 'chained'), esc_html(stripslashes($quiz->title)))?></h1>
 	
 	<div class="postbox-container" style="width:73%;margin-right:2%;">
 	
-		<p><a href="admin.php?page=chained_quizzes"><?php _e('Back to quizzes', 'chained')?></a> | <a href="admin.php?page=chainedquiz_questions&quiz_id=<?php echo $quiz->id?>"><?php _e('Back to questions', 'chained')?></a>
-			| <a href="admin.php?page=chainedquiz_results&quiz_id=<?php echo $quiz->id?>"><?php _e('Manage Results', 'chained')?></a>
-			| <a href="admin.php?page=chained_quizzes&action=edit&id=<?php echo $quiz->id?>"><?php _e('Edit This Quiz', 'chained')?></a>
+		<p><a href="admin.php?page=chained_quizzes"><?php _e('Back to quizzes', 'chained')?></a> | <a href="admin.php?page=chainedquiz_questions&quiz_id=<?php echo intval($quiz->id)?>"><?php _e('Back to questions', 'chained')?></a>
+			| <a href="admin.php?page=chainedquiz_results&quiz_id=<?php echo intval($quiz->id)?>"><?php _e('Manage Results', 'chained')?></a>
+			| <a href="admin.php?page=chained_quizzes&action=edit&id=<?php echo intval($quiz->id)?>"><?php _e('Edit This Quiz', 'chained')?></a>
 		</p>
 		
 		<form method="post" onsubmit="return chainedQuizValidate(this);">
-			<p><label><?php _e('Question title', 'chained')?></label> <input type="text" name="title" size="40" value="<?php echo @$question->title?>"> <i><?php _e('for management purposes', 'chained');?></i></p>
+			<p><label><?php _e('Question title', 'chained')?></label> <input type="text" name="title" size="40" value="<?php echo esc_attr(stripslashes(@$question->title))?>"> <i><?php _e('for management purposes', 'chained');?></i></p>
 			<p><label><?php _e('Question contents', 'chained')?></label> <?php echo wp_editor(stripslashes(@$question->question), 'question')?></p>
 			<p><label><?php _e('Question type:', 'chained')?></label> <select name="qtype" onchange="this.value == 'radio' ? jQuery('#chainedAutoContinue').show() : jQuery('#chainedAutoContinue').hide();">
 				<option value="radio" <?php if(!empty($question->id) and $question->qtype == 'radio') echo 'selected'?>><?php _e('Radio buttons (one possible answer)','chained')?></option>
@@ -20,7 +20,7 @@
 			<span id="chainedAutoContinue" style='display:<?php echo (empty($question->id) or $question->qtype == 'radio') ? 'inline' : 'none';?>'><input type="checkbox" name="autocontinue" value="1" <?php if(!empty($question->autocontinue)) echo 'checked'?>> <?php _e('Automatically continue to the next question when a choice is selected', 'chained')?></span> </p>
 			
 			<p><input type="checkbox" name="accept_comments" value="1" <?php if(!empty($question->accept_comments)) echo 'checked'?>> <?php _e('Accept comments along with the answer.', 'chained');?> &nbsp;
-			<?php _e('Label before the comments field:', 'chained');?> <input type="text" name="accept_comments_label" size="30" value="<?php echo empty($question->accept_comments_label) ? __('Your comments:', 'chained') : esc_attr($question->accept_comments_label);?>"></p>
+			<?php _e('Label before the comments field:', 'chained');?> <input type="text" name="accept_comments_label" size="30" value="<?php echo empty($question->accept_comments_label) ? esc_attr(__('Your comments:', 'chained')) : esc_attr(stripslashes($question->accept_comments_label));?>"></p>
 			
 			<h3><?php _e('Choices/Answers for this question', 'chained')?></h3>
 			
@@ -38,7 +38,7 @@
 			
 			<p><input type="submit" value="<?php _e('Save question and answers','chained')?>" class="button-primary"></p>
 			<input type="hidden" name="ok" value="1">
-			<input type="hidden" name="quiz_id" value="<?php echo $quiz->id?>">
+			<input type="hidden" name="quiz_id" value="<?php echo intval($quiz->id)?>">
 			<?php wp_nonce_field('chained_question');?>
 		</form>
 		
@@ -66,7 +66,7 @@ function chainedQuizAddChoice() {
 
 function chainedQuizValidate(frm) {
 	if(frm.title.value == '') {
-		alert("<?php _e('Please enter question title', 'chained')?>");
+		alert("<?php echo esc_js(__('Please enter question title', 'chained'))?>");
 		frm.title.focus();
 		return false;
 	}

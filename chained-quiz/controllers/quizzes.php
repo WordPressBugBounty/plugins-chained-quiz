@@ -178,11 +178,19 @@ You achieved {{points}} points from {{questions}} questions.', 'chained');
 		
 		// select question
 		$question = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".CHAINED_QUESTIONS." WHERE id=%d", intval($_POST['question_id'])));
+		if(!$question) {
+			die(__('Invalid question.', 'chained'));
+		}
 		
 		// prepare $answer var		
-		$answer = ($question->qtype == 'checkbox') ? @$_POST['answers'] : @$_POST['answer'];		
-		if(empty($answer)) $answer = 0;
-		$answer = esc_sql($answer);
+		if($question->qtype == 'checkbox') {
+			$raw_answer = (!empty($_POST['answers']) && is_array($_POST['answers'])) ? $_POST['answers'] : array();
+			$answer = chained_int_array($raw_answer);
+		} elseif($question->qtype == 'radio') {
+			$answer = !empty($_POST['answer']) ? intval($_POST['answer']) : 0;
+		} else {
+			$answer = !empty($_POST['answer']) ? sanitize_textarea_field(wp_unslash($_POST['answer'])) : '';
+		}
 						
 		// calculate points
 		$points = $_question->calculate_points($question, $answer);
@@ -215,11 +223,11 @@ You achieved {{points}} points from {{questions}} questions.', 'chained');
 			$choice_choice = $choice_correct = '';
 			
 			// if the question is radio, find $choice_choice and $choice_correct
-			if(is_numeric($answer)) {
+			if($question->qtype == 'radio' and is_numeric($answer)) {
 				$choice = $wpdb->get_row($wpdb->prepare("SELECT choice, is_correct FROM ".CHAINED_CHOICES." 
 					WHERE question_id=%d AND id=%d", $question->id, intval($answer)));
-				$choice_choice = $choice->choice;
-				$choice_correct = $choice->is_correct;
+				$choice_choice = $choice ? $choice->choice : '';
+				$choice_correct = $choice ? $choice->is_correct : 0;
 			}
 			
 			$answer_obj = (object)array('answer' => $answer, 'choice' => $choice_choice, 'choice_correct' => $choice_correct, 

@@ -2,7 +2,12 @@
 if( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 // safe redirect
 function chained_redirect($url) {
-	echo "<meta http-equiv='refresh' content='0;url=$url' />"; 
+	$clean_url = esc_url_raw($url);
+	if (!headers_sent()) {
+		wp_redirect($clean_url);
+		exit;
+	}
+	echo "<meta http-equiv='refresh' content='0;url=" . esc_url($clean_url) . "' />"; 
 	exit;
 }
 

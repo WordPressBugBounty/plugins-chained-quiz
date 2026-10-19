@@ -145,7 +145,7 @@ class ChainedIntegrations {
 	  if(!empty($_POST['set_key']) and check_admin_referer('chained_mail_settings')) {
 		  $double_optin = empty($_POST['no_optin']) ? 0 : 1;
 
-		  $api_key = wp_kses_post($_POST['api_key']);
+		  $api_key = sanitize_text_field(wp_unslash($_POST['api_key']));
 
 		// Validate the API key format using a regular expression
 		if (preg_match('/^[a-zA-Z0-9+_-]+-[a-zA-Z0-9+_-]+$/', $api_key)) {
@@ -153,11 +153,8 @@ class ChainedIntegrations {
 			update_option('chainedchimp_no_optin', $double_optin);
 		} else {
 			// Handle invalid API key error
-			wp_die('Invalid MailChimp API key format.');
+			wp_die(__('Invalid MailChimp API key format.', 'chained'));
 		}
-	  	
-	  	  update_option('chainedchimp_api_key', $api_key );
-	  	  update_option('chainedchimp_no_optin', $double_optin);
 	  }
 
 	  $api_key = get_option('chainedchimp_api_key');
@@ -165,7 +162,7 @@ class ChainedIntegrations {
 	  if(!empty($api_key) and strstr($api_key, '-')) {
 	  		list($nothing, $dc) = explode('-', $api_key);
 
-			if (preg_match('/^[a-zA-Z0-9+_-]+-[a-zA-Z0-9+_-]+$/', $dc)) {
+			if (preg_match('/^[a-zA-Z0-9]+$/', $dc)) {
 				$url = 'https://'.$dc.'.api.mailchimp.com/3.0/';
 	  	   
 				// select mailing lists from mailchimp
@@ -176,8 +173,7 @@ class ChainedIntegrations {
 					));
 
 				if( is_wp_error( $json_result  ) ) {
-					echo $json_result->get_error_message();
-					$result = '';
+					$result = (object) array('error' => $json_result->get_error_message());
 				}
 				else $result = json_decode($json_result['body']);
 				//print_r($json_result);

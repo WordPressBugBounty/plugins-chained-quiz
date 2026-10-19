@@ -5,7 +5,10 @@ class ChainedQuizCompleted {
 		global $wpdb;
 		
 		// select quiz
-		$quiz = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".CHAINED_QUIZZES." WHERE id=%d", intval($_GET['quiz_id'])));
+		$quiz = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".CHAINED_QUIZZES." WHERE id=%d", intval($_GET['quiz_id'] ?? 0)));
+		if(empty($quiz)) {
+			wp_die(__('Quiz not found.', 'chained'));
+		}
 		$ob = empty($_GET['ob']) ? 'tC.id' : $_GET['ob'];
 		if(!in_array($ob, array('tC.id', 'datetime', 'points', 'result_title'))) $ob = 'tC.id';
 		$dir = (empty($_GET['dir']) or $_GET['dir'] == 'desc')  ? 'desc' : 'asc';
@@ -28,11 +31,14 @@ class ChainedQuizCompleted {
 		$filters = $joins = array();	
 		$filter_sql = "";
 		
+		$valid_text_filters = array('equals', 'starts', 'ends', 'contains');
+
 		// display name
 		$dn = '';
+		$dnf = in_array($_GET['dnf'] ?? '', $valid_text_filters) ? $_GET['dnf'] : 'equals';
 		if(!empty($_GET['dn'])) {
 		   $dn = sanitize_text_field($_GET['dn']);
-			switch($_GET['dnf']) {
+			switch($dnf) {
 				case 'contains': $like = "%$dn%"; break;
 				case 'starts': $like = "$dn%"; break;
 				case 'ends': $like = "%$dn"; break;
@@ -40,14 +46,15 @@ class ChainedQuizCompleted {
 				default: $like = $dn; break;			
 			}
 			
-			$filters[]= " display_name LIKE '$like' ";
+			$filters[] = $wpdb->prepare(" display_name LIKE %s ", $like);
 		}
 		
 		// email
 		$email = '';
+		$emailf = in_array($_GET['emailf'] ?? '', $valid_text_filters) ? $_GET['emailf'] : 'equals';
 		if(!empty($_GET['email'])) {
 		   $email = sanitize_email($_GET['email']); 
-			switch($_GET['emailf']) {
+			switch($emailf) {
 				case 'contains': $like="%$email%"; break;
 				case 'starts': $like="$email%"; break;
 				case 'ends': $like="%$email"; break;
@@ -56,15 +63,14 @@ class ChainedQuizCompleted {
 			}
 			
 			$filters[] = $wpdb->prepare(" user_email LIKE %s ", $like);
-			//$filters[]=$wpdb->prepare(" ((user_id=0 AND email LIKE %s) OR (user_id!=0 AND user_email LIKE %s)) ", $like, $like);
-			//$left_join = 'LEFT'; // when email is selected, do left join because it might be without logged user
 		}
 		
 		// IP
 		$ip = '';
+		$ipf = in_array($_GET['ipf'] ?? '', $valid_text_filters) ? $_GET['ipf'] : 'equals';
 		if(!empty($_GET['ip'])) {
 		   $ip = sanitize_text_field($_GET['ip']);
-			switch($_GET['ipf']) {
+			switch($ipf) {
 				case 'contains': $like="%$ip%"; break;
 				case 'starts': $like="$ip%"; break;
 				case 'ends': $like="%$ip"; break;
@@ -77,9 +83,11 @@ class ChainedQuizCompleted {
 		
 		// Date
 		$date = '';
+		$valid_date_filters = array('equals', 'before', 'after');
+		$datef = in_array($_GET['datef'] ?? '', $valid_date_filters) ? $_GET['datef'] : 'equals';
 		if(!empty($_GET['date'])) {
 		   $date = sanitize_text_field($_GET['date']);
-			switch($_GET['datef']) {
+			switch($datef) {
 				case 'after': $filters[]=$wpdb->prepare(" DATE(datetime) > %s ", $date); break;
 				case 'before': $filters[]=$wpdb->prepare(" DATE(datetime) < %s ", $date); break;
 				case 'equals':
@@ -89,9 +97,11 @@ class ChainedQuizCompleted {
 		
 		// Points
 		$points = '';
-		if(!empty($_GET['points'])) {
+		$valid_points_filters = array('equals', 'less', 'more');
+		$pointsf = in_array($_GET['pointsf'] ?? '', $valid_points_filters) ? $_GET['pointsf'] : 'equals';
+		if(isset($_GET['points']) && $_GET['points'] !== '') {
 		   $points = floatval($_GET['points']);
-			switch($_GET['pointsf']) {
+			switch($pointsf) {
 				case 'less': $filters[]=$wpdb->prepare(" points < %f ", $points); break;
 				case 'more': $filters[]=$wpdb->prepare(" points > %f ", $points); break;
 				case 'equals':
@@ -229,10 +239,15 @@ class ChainedQuizCompleted {
 		}	
 		
 		// this var will be added to links at the view
-		$filters_url="dn=".esc_attr($dn)."&dnf=".esc_attr( $_GET['dnf'] ?? '' )."&email=".$email."&emailf=".
-		esc_attr( $_GET['emailf'] ?? '')."&ip=".esc_attr($ip)."&ipf=".esc_attr( $_GET['ipf'] ?? '' )."&date=".esc_attr($date).
-		"&datef=".esc_attr( $_GET['datef'] ?? '')."&points=".$points."&pointsf=".esc_attr( $_GET['pointsf'] ?? '' ).
-		"&result_id=".intval( $_GET['result_id'] ?? 0)."&source_url=".esc_url_raw( $_GET['source_url'] ?? '');		
+		$filters_params = array();
+		if ($dn !== '') { $filters_params['dn'] = $dn; $filters_params['dnf'] = $dnf; }
+		if ($email !== '') { $filters_params['email'] = $email; $filters_params['emailf'] = $emailf; }
+		if ($ip !== '') { $filters_params['ip'] = $ip; $filters_params['ipf'] = $ipf; }
+		if ($date !== '') { $filters_params['date'] = $date; $filters_params['datef'] = $datef; }
+		if ($points !== '') { $filters_params['points'] = $points; $filters_params['pointsf'] = $pointsf; }
+		if (!empty($_GET['result_id'])) { $filters_params['result_id'] = intval($_GET['result_id']); }
+		if (!empty($_GET['source_url'])) { $filters_params['source_url'] = esc_url_raw($_GET['source_url']); }
+		$filters_url = http_build_query($filters_params);		
 		
 		$display_filters = (!count($filters)) ? false : true;	
 		

@@ -125,7 +125,7 @@ class ChainedQuizQuestion {
   function display_choices($question, $choices) {
   	   $autocontinue = $output = '';
   	   if($question->qtype == 'radio' and $question->autocontinue) {
-  	   	$autocontinue = "onclick=\"chainedQuiz.goon(".$question->quiz_id.", '".admin_url('admin-ajax.php')."');\"";
+  	   	$autocontinue = "onclick=\"chainedQuiz.goon(".intval($question->quiz_id).", '".esc_url(admin_url('admin-ajax.php'))."');\"";
   	   	$output .= '<!--hide_go_ahead-->';
   	   }  	   
   	   
@@ -142,7 +142,7 @@ class ChainedQuizQuestion {
 					$choice_text = stripslashes($choice->choice);
 					$choice_text = do_shortcode($choice_text);
 					
-					$output .= "<div class='chained-quiz-choice'><label class='chained-quiz-label'><input class='chained-quiz-frontend chained-quiz-$type' type='$type' name='$name' value='".$choice->id."' $autocontinue> $choice_text</label></div>";
+					$output .= "<div class='chained-quiz-choice'><label class='chained-quiz-label'><input class='chained-quiz-frontend chained-quiz-$type' type='$type' name='$name' value='".intval($choice->id)."' $autocontinue> $choice_text</label></div>";
 				}
 						
 				return $output;
@@ -246,7 +246,7 @@ class ChainedQuizQuestion {
 		$correct_var = 0;
 		
 		if($answer->qtype == 'text') {
-			$user_answer = wpautop(stripslashes($answer->answer));
+			$user_answer = wpautop(esc_html(stripslashes($answer->answer)));
 			$is_correct = $wpdb->get_var($wpdb->prepare("SELECT is_correct FROM ".CHAINED_CHOICES."
 				WHERE question_id=%d AND choice=%s", $answer->question_id, $answer->answer));
 			$correct_var = $is_correct;
@@ -254,7 +254,7 @@ class ChainedQuizQuestion {
 		}
 		else {
 			if(is_numeric($answer->answer)) {
-				$user_answer = wpautop(stripslashes($answer->choice));
+				$user_answer = wpautop(wp_kses_post(stripslashes($answer->choice ?? '')));
 				$correct_var = $answer->choice_correct;
 				$is_correct = $answer->choice_correct ? __('Yes', 'chained') : __('No', 'chained');	
 			}
@@ -262,13 +262,14 @@ class ChainedQuizQuestion {
 				$choice_ids = explode(',', $answer->answer);
 				$points = 0;
 				foreach($choice_ids as $cnt=>$choice_id) {
-					$choice_text = $wpdb->get_row($wpdb->prepare("SELECT choice, is_correct, points FROM ".CHAINED_CHOICES." WHERE id=%d", $choice_id));
+					$choice_text = $wpdb->get_row($wpdb->prepare("SELECT choice, is_correct, points FROM ".CHAINED_CHOICES." WHERE id=%d", intval($choice_id)));
+					if(!$choice_text) continue;
 					$points += $choice_text->points;
 					if($cnt) { 
 						$user_answer .= ', ';
 						$is_correct .= ', ';
 					} 
-					$user_answer .= empty($choice_text->choice) ? '' : stripslashes($choice_text->choice);
+					$user_answer .= empty($choice_text->choice) ? '' : wp_kses_post(stripslashes($choice_text->choice));
 					$is_correct .= empty($choice_text->is_correct) ? __('No', 'chained') : __('Yes', 'chained');	
 				}
 				$user_answer = wpautop($user_answer);

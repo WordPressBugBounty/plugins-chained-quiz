@@ -1,14 +1,14 @@
 <div class="wrap">
-	<h1><?php printf(__('Manage Questions in %s', 'chained'), stripslashes($quiz->title));?> </h1>
+	<h1><?php printf(__('Manage Questions in %s', 'chained'), esc_html(stripslashes($quiz->title)));?> </h1>
 	
 	<div class="postbox-container" style="width:73%;margin-right:2%;">
 	
 		<p><a href="admin.php?page=chained_quizzes"><?php _e('Back to quizzes', 'chained')?></a>
-			| <a href="admin.php?page=chainedquiz_results&quiz_id=<?php echo $quiz->id?>"><?php _e('Manage Results', 'chained')?></a>
-			| <a href="admin.php?page=chained_quizzes&action=edit&id=<?php echo $quiz->id?>"><?php _e('Edit This Quiz', 'chained')?></a>
+			| <a href="admin.php?page=chainedquiz_results&quiz_id=<?php echo intval($quiz->id)?>"><?php _e('Manage Results', 'chained')?></a>
+			| <a href="admin.php?page=chained_quizzes&action=edit&id=<?php echo intval($quiz->id)?>"><?php _e('Edit This Quiz', 'chained')?></a>
 		</p>
 		
-		<p><a href="admin.php?page=chainedquiz_questions&action=add&quiz_id=<?php echo $quiz->id?>"><?php _e('Click here to add a new question', 'chained')?></a></p>
+		<p><a href="admin.php?page=chainedquiz_questions&action=add&quiz_id=<?php echo intval($quiz->id)?>"><?php _e('Click here to add a new question', 'chained')?></a></p>
 		<?php if(count($questions)):?>
 			<table class="widefat">
 				<thead>
@@ -20,13 +20,13 @@
 					$class = ('alternate' == @$class) ? '' : 'alternate';?>
 					<tr class="<?php echo $class?>">
 						<td><?php if($count > 1 and $cnt):?>
-							<a href="<?php echo wp_nonce_url('admin.php?page=chainedquiz_questions&quiz_id='. $quiz->id.'&move='. $question->id.'&dir=up', 'chained_move', 'chained_nonce')?>"><img src="<?php echo CHAINED_URL."/img/arrow-up.png"?>" alt="<?php _e('Move Up', 'chained')?>" border="0"></a>
+							<a href="<?php echo esc_url(wp_nonce_url('admin.php?page=chainedquiz_questions&quiz_id='. intval($quiz->id).'&move='. intval($question->id).'&dir=up', 'chained_move', 'chained_nonce'))?>"><img src="<?php echo esc_url(CHAINED_URL."img/arrow-up.png")?>" alt="<?php _e('Move Up', 'chained')?>" border="0"></a>
 						<?php else:?>&nbsp;<?php endif;?>
 						<?php if($count > $cnt+1):?>	
-							<a href="<?php echo wp_nonce_url('admin.php?page=chainedquiz_questions&quiz_id='. $quiz->id.'&move='. $question->id.'&dir=down', 'chained_move', 'chained_nonce')?>"><img src="<?php echo CHAINED_URL."/img/arrow-down.png"?>" alt="<?php _e('Move Down', 'chained')?>" border="0"></a>
+							<a href="<?php echo esc_url(wp_nonce_url('admin.php?page=chainedquiz_questions&quiz_id='. intval($quiz->id).'&move='. intval($question->id).'&dir=down', 'chained_move', 'chained_nonce'))?>"><img src="<?php echo esc_url(CHAINED_URL."img/arrow-down.png")?>" alt="<?php _e('Move Down', 'chained')?>" border="0"></a>
 						<?php else:?>&nbsp;<?php endif;?></td>					
-						<td><?php echo $question->id?></td><td><?php echo stripslashes($question->title)?></td>
-						<td><?php echo $question->qtype?></td><td><a href="admin.php?page=chainedquiz_questions&action=edit&id=<?php echo $question->id?>"><?php _e('Edit', 'chained')?></a> | <a href="<?php echo wp_nonce_url('admin.php?page=chainedquiz_questions&quiz_id=' . $quiz->id .'&del=1&id='. $question->id, 'chained_delete', 'chained_nonce')?>" onclick="return confirm('<?php _e('Are you sure?', 'chained')?>');"><?php _e('Delete', 'chained')?></a></td>
+						<td><?php echo intval($question->id)?></td><td><?php echo esc_html(stripslashes($question->title))?></td>
+						<td><?php echo esc_html($question->qtype)?></td><td><a href="admin.php?page=chainedquiz_questions&action=edit&id=<?php echo intval($question->id)?>"><?php _e('Edit', 'chained')?></a> | <a href="<?php echo esc_url(wp_nonce_url('admin.php?page=chainedquiz_questions&quiz_id=' . intval($quiz->id) .'&del=1&id='. intval($question->id), 'chained_delete', 'chained_nonce'))?>" onclick="return confirm('<?php echo esc_js(__('Are you sure?', 'chained'))?>');"><?php _e('Delete', 'chained')?></a></td>
 					</tr>
 				<?php endforeach;?>	
 				</tbody>
@@ -45,8 +45,8 @@
 
 <script type="text/javascript" >
 function chainedConfirmDelete(qid) {
-	if(confirm("<?php _e('Are you sure?', 'chained')?>")) {
-		window.location = 'admin.php?page=chainedquiz_questions&quiz_id=<?php echo $quiz->id?>&del=1&id='+qid;
+	if(confirm("<?php echo esc_js(__('Are you sure?', 'chained'))?>")) {
+		window.location = 'admin.php?page=chainedquiz_questions&quiz_id=<?php echo intval($quiz->id)?>&del=1&id='+encodeURIComponent(qid);
 	}
 }
 </script>
